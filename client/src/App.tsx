@@ -1,34 +1,54 @@
-import { useState } from 'react'
-import reactLogo from './assets/react.svg'
 import './App.css'
+import {Route, BrowserRouter as Router, Routes, Link, Navigate} from 'react-router-dom'
+import Login from './components/Login'
+import Register from './components/Register'
+import Dashboard from './components/Dashboard'
+import Home from './components/Home'
+import { useEffect, useState } from 'react'
+import axios from 'axios'
 
 function App() {
-  const [count, setCount] = useState(0)
+	const [isAuthenticated, setIsAuthenticated] = useState<Boolean>(false)
 
-  return (
-    <div className="App">
-      <div>
-        <a href="https://vitejs.dev" target="_blank">
-          <img src="/vite.svg" className="logo" alt="Vite logo" />
-        </a>
-        <a href="https://reactjs.org" target="_blank">
-          <img src={reactLogo} className="logo react" alt="React logo" />
-        </a>
-      </div>
-      <h1>Vite + React</h1>
-      <div className="card">
-        <button onClick={() => setCount((count) => count + 1)}>
-          count is {count}
-        </button>
-        <p>
-          Edit <code>src/App.tsx</code> and save to test HMR
-        </p>
-      </div>
-      <p className="read-the-docs">
-        Click on the Vite and React logos to learn more
-      </p>
-    </div>
-  )
+	const verify = async (token:string | null) => {
+		const response = await axios.get('http://localhost:5000/auth/verify', {
+			headers: {
+				'token': token
+			}
+		}).then((res) => {
+			return res.data		
+		}).catch((err) => {
+			console.log(err)
+		})
+
+		if(response) {
+			setIsAuthenticated(true)
+			console.log(isAuthenticated)
+		} 
+
+		
+	}
+	useEffect(() => {
+		const jwtToken = localStorage.getItem('token')
+		verify(jwtToken)
+		console.log(isAuthenticated)
+	})
+
+	return (
+		<>
+			<h1>PERN Auth</h1>
+			<Router>
+				<Routes>
+					<Route path='/' element={!isAuthenticated ? <Home></Home> : <Navigate to='/dashboard' replace></Navigate>}></Route>
+					<Route path='/login' element={!isAuthenticated ? <Login auth={setIsAuthenticated}></Login> : <Navigate to='/dashboard' replace></Navigate>}></Route>
+					<Route path='/register' element={!isAuthenticated ? <Register></Register> : <Navigate to='/dashboard' replace></Navigate>}></Route>
+					<Route path='/dashboard' element={isAuthenticated ? <Dashboard auth={setIsAuthenticated}></Dashboard> : <Navigate to='/' replace></Navigate>}></Route>
+
+
+				</Routes>
+			</Router>
+		</>
+	)
 }
 
 export default App
